@@ -16,6 +16,8 @@ async function loadValidators() {
   ajv.addSchema(modelSchema);
   configValidator = ajv.compile(configSchema);
   tuiValidator = ajv.compile(tuiSchema);
+  configErrors = (data) => configValidator!(data) ? [] : (configValidator!.errors ?? []);
+  tuiErrors = (data) => tuiValidator!(data) ? [] : (tuiValidator!.errors ?? []);
 }
 
 let validatorsReady: Promise<void> | null = null;

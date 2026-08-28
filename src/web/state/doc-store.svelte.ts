@@ -1,7 +1,7 @@
 import { parse, printParseErrorCode, type ParseError } from "jsonc-parser";
 import { applyPatch } from "./patch";
 import { api } from "../api";
-import { clientValidate } from "./validate";
+import { clientValidate, ensureValidators } from "./validate";
 import type { DocId, DocError } from "../../shared/types";
 
 export class DocStore {
@@ -58,6 +58,7 @@ export class DocStore {
     this.exists = configRes.exists;
     this.serverVersion = configRes.schemaVersion;
     if (configRes.raw) {
+      await ensureValidators();
       this.setText(configRes.raw, { dirty: false });
     }
     this.dirty = false;
