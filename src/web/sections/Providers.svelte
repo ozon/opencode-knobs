@@ -49,6 +49,7 @@
       if (!(k in kv)) store.patch(["provider", provId, "options", k], undefined);
     }
     for (const [k, v] of Object.entries(kv)) {
+      if (!k) continue;
       if (!(k in old) || String(old[k]) !== String(v)) store.patch(["provider", provId, "options", k], v);
     }
   }
@@ -71,6 +72,7 @@
     id = id.trim();
     if (!id || getModels(getProviders()[provId])[id] !== undefined) return;
     store.patch(["provider", provId, "models", id], {});
+    newModelId[provId] = "";
   }
 
   function removeModel(provId: string, modelId: string) {
