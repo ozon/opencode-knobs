@@ -1,0 +1,65 @@
+:root {
+  --bg-0: #1e1e2e;
+  --bg-1: #181825;
+  --bg-2: #313244;
+  --bg-3: #45475a;
+  --fg-0: #cdd6f4;
+  --fg-1: #a6adc8;
+  --fg-2: #7f849c;
+  --accent: #89b4fa;
+  --accent-hover: #b4d0fb;
+  --danger: #f38ba8;
+  --success: #a6e3a1;
+  --warn: #f9e2af;
+  --radius: 4px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 20px;
+  --font: "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", ui-monospace, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+button {
+  background: var(--bg-2);
+  color: var(--fg-0);
+  border: 1px solid var(--bg-3);
+  border-radius: var(--radius);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+  font: inherit;
+}
+button:hover { background: var(--bg-3); }
+button.primary { background: var(--accent); color: var(--bg-0); border-color: var(--accent); }
+button.primary:hover { background: var(--accent-hover); }
+button.danger { border-color: var(--danger); color: var(--danger); }
+button.danger:hover { background: var(--danger); color: var(--bg-0); }
+
+input, textarea, select {
+  background: var(--bg-1);
+  color: var(--fg-0);
+  border: 1px solid var(--bg-3);
+  border-radius: var(--radius);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font: inherit;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+
+label {
+  display: block;
+  font-size: 11px;
+  color: var(--fg-1);
+  margin-bottom: var(--spacing-xs);
+}
+.field { margin-bottom: var(--spacing-md); }
+.field .help { font-size: 11px; color: var(--fg-2); margin-top: var(--spacing-xs); }
