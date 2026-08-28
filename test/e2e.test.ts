@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn, type Subprocess } from "bun";
@@ -101,5 +101,6 @@ test("e2e: spawn server, login, read, write, verify backup", async () => {
     expect(readFileSync(join(opencodeDir, "opencode.json"), "utf8")).toContain("unknown_key");
   } finally {
     proc.kill();
+    rmSync(tmpDir, { recursive: true, force: true });
   }
 }, 15_000);
