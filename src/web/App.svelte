@@ -3,6 +3,7 @@
   import General from "./sections/General.svelte";
   import Tui from "./sections/Tui.svelte";
   import Misc from "./sections/Misc.svelte";
+  import Permissions from "./sections/Permissions.svelte";
   import { api } from "./api";
   import { DocStore } from "./state/doc-store.svelte";
   import { ensureValidators } from "./state/validate";
@@ -133,7 +134,7 @@
     {:else if activeTab === "mcp"}
       <p>MCP (coming next)</p>
     {:else if activeTab === "permissions"}
-      <p>Permissions (coming next)</p>
+      <Permissions store={configDoc} />
     {:else if activeTab === "formatter"}
       <p>Formatter & LSP (coming next)</p>
     {:else if activeTab === "tui"}
