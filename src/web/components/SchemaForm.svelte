@@ -87,7 +87,7 @@
   {#if resolved?.type === "boolean" || anyOf?.some((a: any) => a.type === "boolean")}
     {@const opts = anyOf ? anyOf.filter((a: any) => a.type !== "boolean").map((a: any) => a.enum ?? [a.const]).flat().filter(Boolean) : []}
     {#if opts.length > 0}
-      <Field {label={name}} {help} {error}>
+      <Field label={name} {help} {error}>
         <select value={value ?? ""} onchange={(e) => { const v = (e.currentTarget as HTMLSelectElement).value; patchField(fieldPath, v === "true" ? true : v === "false" ? false : v); }}>
           {#each ["", "true", "false", ...opts] as opt}
             <option value={opt}>{opt || "(unset)"}</option>
@@ -95,7 +95,7 @@
         </select>
       </Field>
     {:else}
-      <Field {label={name}} {help} {error}>
+      <Field label={name} {help} {error}>
         <label class="toggle">
           <input type="checkbox" checked={!!value} onchange={(e) => patchField(fieldPath, (e.currentTarget as HTMLInputElement).checked)} />
           <span>{value ? "on" : "off"}</span>
@@ -104,7 +104,7 @@
     {/if}
 
   {:else if options}
-    <Field {label={name}} {help} {error}>
+    <Field label={name} {help} {error}>
       <select value={value ?? ""} onchange={(e) => patchField(fieldPath, (e.currentTarget as HTMLSelectElement).value || undefined)}>
         <option value="">(unset)</option>
         {#each options as opt}
@@ -114,24 +114,24 @@
     </Field>
 
   {:else if resolved?.type === "integer" || resolved?.type === "number"}
-    <Field {label={name}} {help} {error}>
+    <Field label={name} {help} {error}>
       <input type="number" value={value ?? ""} min={resolved.minimum} max={resolved.maximum}
         onchange={(e) => { const v = (e.currentTarget as HTMLInputElement).value; patchField(fieldPath, v === "" ? undefined : Number(v)); }} />
     </Field>
 
   {:else if resolved?.type === "string"}
     {#if isSecret(fieldPath)}
-      <Field {label={name}} {help} {error}>
+      <Field label={name} {help} {error}>
         <MaskedSecret {value} onchange={(v) => patchField(fieldPath, v)} />
       </Field>
     {:else}
-      <Field {label={name}} {help} {error}>
+      <Field label={name} {help} {error}>
         <input type="text" value={value ?? ""} onchange={(e) => patchField(fieldPath, (e.currentTarget as HTMLInputElement).value || undefined)} />
       </Field>
     {/if}
 
   {:else if resolved?.type === "array" && resolved?.items?.type === "string"}
-    <Field {label={name}} {help} {error}>
+    <Field label={name} {help} {error}>
       <StringList {value} onchange={(v) => patchField(fieldPath, v)} />
     </Field>
 
@@ -144,12 +144,12 @@
     </details>
 
   {:else if resolved?.type === "object" && resolved?.additionalProperties}
-    <Field {label={name}} {help} {error}>
+    <Field label={name} {help} {error}>
       <KVEditor {value} onchange={(v) => patchField(fieldPath, v)} />
     </Field>
 
   {:else}
-    <Field {label={name}} {help} {error}>
+    <Field label={name} {help} {error}>
       <input type="text" value={value === undefined ? "" : JSON.stringify(value)}
         onchange={(e) => { const v = (e.currentTarget as HTMLInputElement).value; try { patchField(fieldPath, JSON.parse(v)); } catch { patchField(fieldPath, v || undefined); } }} />
     </Field>

@@ -1,5 +1,8 @@
 <script lang="ts">
   import Login from "./Login.svelte";
+  import General from "./sections/General.svelte";
+  import Tui from "./sections/Tui.svelte";
+  import Misc from "./sections/Misc.svelte";
   import { api } from "./api";
   import { DocStore } from "./state/doc-store.svelte";
   import { ensureValidators } from "./state/validate";
@@ -122,8 +125,7 @@
 
   <main>
     {#if activeTab === "general"}
-      <!-- @slot General section goes here, Task 14 -->
-      <p>General (coming next)</p>
+      <General store={configDoc} />
     {:else if activeTab === "providers"}
       <p>Providers (coming next)</p>
     {:else if activeTab === "agents"}
@@ -135,9 +137,9 @@
     {:else if activeTab === "formatter"}
       <p>Formatter & LSP (coming next)</p>
     {:else if activeTab === "tui"}
-      <p>TUI (coming next)</p>
+      <Tui store={tuiDoc} />
     {:else if activeTab === "misc"}
-      <p>Misc (coming next)</p>
+      <Misc store={configDoc} />
     {:else if activeTab === "raw"}
       <p>Raw (coming next)</p>
     {/if}
