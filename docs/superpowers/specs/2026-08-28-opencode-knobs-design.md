@@ -48,7 +48,7 @@ Single Bun process serves the built frontend (static assets from `dist/`) plus t
 1. Frontend holds one canonical state per document (`config`, `tui`): `{ raw: string, json: object | null, parseErrors, validationErrors, dirty, exists }`.
 2. GUI edit → `modify(raw, path, value, formattingOptions)` → `applyEdits()` → new raw text → re-parse (jsonc-parser) → re-validate (Ajv, browser) → both views update. Deleting a value uses `modify(raw, path, undefined)`.
 3. Raw editor (CodeMirror 6) edits update the raw text directly → same re-parse/validate cycle.
-4. Save → for each dirty doc: `PUT /api/config/:doc { raw }` → server re-parses, Ajv-validates, backs up, atomic-writes → returns `{ valid, errors[], backupPath }`.
+4. Save → for each dirty doc: `PUT /api/config/:doc { raw }` → server re-parses, Ajv-validates, backs up, atomic-writes → returns `{ valid, errors[], backupPath }`. Raw-tab "Save anyway" (VAL-4) sends `force: true`, which bypasses schema errors only, never syntax errors (§3.3).
 5. Sync rules (SPEC §9.1):
    - GUI → Raw: raw always reflects current store immediately.
    - Raw → GUI: blocked while parse errors exist; errors shown, stay in Raw.
@@ -63,15 +63,16 @@ Consequence of D1: the server never derives patches; it persists exactly the raw
 - One-time code: 8 chars from alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (A–Z, 2–9 minus 0/O/1/I), generated with `crypto.randomInt`, fresh per start.
 - Session: 32-byte random token → in-memory `Map<token, createdAt>`; cookie `knobs_session` with `HttpOnly; SameSite=Strict; Path=/`. All sessions die on restart (new code, new secret).
 - Rate limit on `/api/login`: per-IP failure counter; 5 failures → 30 s lockout (HTTP 429). Code comparison via `timingSafeEqual` over SHA-256 digests (constant-time, length-safe).
-- CSRF / DNS-rebinding (AUTH-5): mutating endpoints require header `X-Requested-With: fetch`; every request's `Host` header must equal the bound `host:port`, else 403.
+- CSRF / DNS-rebinding (AUTH-5): mutating endpoints require header `X-Requested-With: fetch`; Host header validation is mandatory in both modes but depends on the bind address: bound to `127.0.0.1` → accept only `127.0.0.1:<port>` or `localhost:<port>`; bound to `0.0.0.0` → validate the port only (LAN clients send their own host IP). Mismatch → 403.
 - `/api/login` is the only unauthenticated route. The code is printed to the terminal only; the session secret is never logged.
 
 ### 3.2 Config pipeline (CFG-1..10)
 
 - Path resolution: `$XDG_CONFIG_HOME/opencode/` if set, else `~/.config/opencode/`. Files: `opencode.json`, `tui.json`. No other layer is read.
-- Load: read file (missing → empty-document state); `parseTree` for diagnostics, `parse` (comments + trailing commas allowed) for JSON.
-- Write: Ajv validate (draft 2020-12) → backup current file to `<name>.bak-<YYYYMMDD-HHMMSS>` next to the original, rotate to newest 5 → write temp file in same directory → `rename()` (atomic).
-- Indentation: detect from raw text (first indented line's leading whitespace); fallback 2 spaces. New files created on first save with the matching `$schema` key and trailing newline (CFG-5).
+- Load: read file (missing → `{ exists: false, raw: "" }`); `parseTree` for diagnostics, `parse` (comments + trailing commas allowed) for JSON.
+- Write: Ajv validate (draft 2020-12; `force` semantics in §3.3) → backup current file to `<name>.bak-<YYYYMMDD-HHMMSS>` next to the original, rotate to newest 5 → write temp file in same directory → `rename()` (atomic). The server writes the received raw text **verbatim** and never re-formats.
+- Indentation detection (CFG-4) is client-side: since `modify()` runs in the browser (D1), `src/web/state/patch.ts` detects the file's indentation (first indented line's leading whitespace; fallback 2 spaces) and passes it as `modify()` formatting options.
+- Missing-file flow (CFG-5): GET reports `exists: false` → client initializes the doc store with the template `{ "$schema": "<matching schema URL>" }`, so the first save produces a valid file including `$schema`. The server creates the file on PUT, creating `~/.config/opencode/` recursively if missing.
 - Secret masking (CFG-10) is a frontend concern; the server persists raw text verbatim. Untouched secrets emit no patch because client patches are path-based.
 - No file watcher (CFG-8).
 
@@ -81,11 +82,17 @@ Consequence of D1: the server never derives patches; it persists exactly the raw
 |---|---|
 | `POST /api/login` | `{code}` → session cookie; 429 during lockout |
 | `POST /api/logout` | drop session |
-| `GET /api/config/:doc` | `{ raw, json, valid, errors[], schemaVersion }` |
-| `PUT /api/config/:doc` | `{ raw }` → validate, backup, atomic write → `{ valid, errors[], backupPath }` |
+| `GET /api/config/:doc` | `{ raw, json, valid, errors[], schemaVersion, exists }`; missing file → `{ exists: false, raw: "" }` |
+| `PUT /api/config/:doc` | `{ raw, force?: boolean }` → validate, backup, atomic write → `{ valid, errors[], backupPath }` |
 | `GET /api/schema/:doc` | vendored JSON schema |
 | `GET /api/meta/providers` | models.dev snapshot or `{ available: false }` |
 | `GET /api/health` | liveness; resets idle timer (authenticated only) |
+
+PUT semantics (VAL-4 "Save anyway"):
+
+- Syntax-invalid JSON → always HTTP 400, never written. `force` does NOT bypass syntax errors (opencode could not read the file).
+- Schema-invalid, `force` absent/false → HTTP 422 + `errors[]`, no write.
+- Schema-invalid, `force: true` → write (backup as usual).
 
 ### 3.4 Idle timer & startup
 
@@ -97,9 +104,10 @@ Consequence of D1: the server never derives patches; it persists exactly the raw
 
 ### 4.1 State
 
-- Svelte 5 runes. `createDocStore(docId)` per document with the state from §2.
-- Single mutation entry point `applyPatch(path, value)` in `state/` → client-side `modify()`/`applyEdits()` → re-parse → re-validate → set dirty.
+- Svelte 5 runes. `createDocStore(docId)` per document with the state from §2. When GET reports `exists: false`, the store initializes with the template `{ "$schema": "<matching schema URL>" }` (CFG-5).
+- Single mutation entry point `applyPatch(path, value)` in `state/patch.ts` → client-side indentation detection + `modify()`/`applyEdits()` → re-parse → re-validate → set dirty.
 - Ajv runs in the browser against the schema fetched from `/api/schema/:doc`; compiled validators cached per doc.
+- Error shape (shared by GUI inline errors and CodeMirror lint markers): `{ path: string /* Ajv instancePath / JSON Pointer */, message: string, source: "parse" | "schema" }`.
 - CodeMirror 6 as controlled view: external store changes pushed via editor transactions; user typing updates the store (debounced re-parse). JSONC language mode + schema-driven lint source.
 
 ### 4.2 Layout
@@ -116,7 +124,7 @@ Consequence of D1: the server never derives patches; it persists exactly the raw
 
 ### 4.3 Sections (hybrid rendering, D2)
 
-Generic schema renderer (`schema/` walker) — walks schema properties, skips deprecated properties (VAL-5: description/metadata marks deprecated), renders by type: string → text input, enum → select, boolean → toggle, number → number input (respecting min/max), string array → list editor, object → nested group. Schema `description` shown as help text on every control. Used for: **General**, **TUI**, **Misc/experimental**, and the ask/allow/deny selects of **Permissions**.
+Generic schema renderer (`schema/` walker) — walks schema properties, skips deprecated properties (VAL-5: case-insensitive match on "deprecated" in schema `description`/`markdownDescription`, with the explicit known list from SPEC §VAL-5 — `mode`, `autoshare`, `layout`, `reference`/`references`, `agent.*.tools` — as fallback for unmarked properties), renders by type: string → text input, enum → select, boolean → toggle, number → number input (respecting min/max), string array → list editor, object → nested group. Schema `description` shown as help text on every control. Used for: **General**, **TUI**, **Misc/experimental**, and the ask/allow/deny selects of **Permissions**.
 
 Hand-built components:
 
@@ -143,9 +151,9 @@ Server fetches `https://models.dev/api.json` at startup (5 s timeout, in-memory 
 
 ## 6. Testing (TEST-1..3, `bun test`)
 
-- `test/config.test.ts` — JSONC round-trip preserves comments/formatting/`{env:…}` placeholders byte-identical; path patch touches only the edited path; backup creation + rotation to 5; create-on-first-save includes `$schema`; indentation detection; atomic write.
-- `test/auth.test.ts` — code alphabet/length; constant-time compare; 5 failures → lockout → 429; lockout expiry; session invalidation on restart; Host header rejection; missing `X-Requested-With` on mutating routes → 403.
-- `test/validation.test.ts` — invalid doc blocked on PUT (VAL-3); valid doc accepted; deprecated-property detection helper.
+- `test/config.test.ts` — JSONC round-trip preserves comments/formatting/`{env:…}` placeholders byte-identical; path patch touches only the edited path; backup creation + rotation to 5; create-on-first-save includes `$schema` (dir created recursively); indentation detection (client helper); atomic write; server writes received raw text verbatim.
+- `test/auth.test.ts` — code alphabet/length; constant-time compare; 5 failures → lockout → 429; lockout expiry; session invalidation on restart; Host header rules per bind mode (localhost strict, 0.0.0.0 port-only); missing `X-Requested-With` on mutating routes → 403.
+- `test/validation.test.ts` — invalid doc blocked on PUT → 422 (VAL-3); `force: true` writes schema-invalid doc + backup; syntax-invalid doc → 400 and never written even with `force`; valid doc accepted; deprecated-property detection helper.
 - `test/e2e.test.ts` — spawn server on a random port with temp `XDG_CONFIG_HOME` → read code from stdout → login → GET config → PUT change → verify file content + `.bak-*` backup on disk.
 
 ## 7. Acceptance criteria
