@@ -9,8 +9,11 @@
     "todoread", "todowrite", "question", "external_directory", "doom_loop",
   ] as const;
 
-  const PATTERN_CAPS = ["bash", "edit", "read", "external_directory", "glob", "grep", "list", "task", "lsp", "skill"] as const;
+  const PATTERN_CAPS: readonly string[] = ["bash", "edit", "read", "external_directory", "glob", "grep", "list", "task", "lsp", "skill"];
   type PermValue = string | { [pattern: string]: string } | undefined;
+
+  let drafts = $state<Record<string, Record<string, string>>>({});
+  let pending = $state<Record<string, string[]>>({});
 
   function getPerm(cap: string): PermValue {
     const perm = (store.json as any)?.permission;
@@ -21,32 +24,74 @@
     store.patch(["permission", cap], value === "(unset)" ? undefined : value);
   }
 
-  function addPattern(cap: string) {
+  function patternObj(cap: string): Record<string, string> {
     const current = getPerm(cap);
-    const obj: Record<string, string> = typeof current === "object" && current !== null ? { ...current } : {};
-    obj[""] = "ask";
+    return typeof current === "object" && current !== null ? { ...current } : {};
+  }
+
+  function convertToPatterns(cap: string) {
+    const current = getPerm(cap);
+    const obj = typeof current === "object" && current !== null
+      ? { ...current }
+      : { "*": typeof current === "string" ? current : "ask" };
     store.patch(["permission", cap], obj);
   }
 
-  function setPattern(cap: string, oldPattern: string, newPattern: string) {
-    const current = getPerm(cap);
-    const obj: Record<string, string> = typeof current === "object" && current !== null ? { ...current } : {};
+  function draftFor(cap: string, pattern: string): string {
+    return drafts[cap]?.[pattern] ?? pattern;
+  }
+
+  function setDraft(cap: string, pattern: string, text: string) {
+    drafts[cap] = { ...(drafts[cap] ?? {}), [pattern]: text };
+  }
+
+  function commitDraft(cap: string, oldPattern: string) {
+    const draft = drafts[cap]?.[oldPattern];
+    if (draft === undefined || draft === oldPattern) return;
+    const obj = patternObj(cap);
     const val = obj[oldPattern];
     delete obj[oldPattern];
-    if (newPattern) obj[newPattern] = val ?? "ask";
-    store.patch(["permission", cap], obj);
+    if (draft) obj[draft] = val ?? "ask";
+    store.patch(["permission", cap], Object.keys(obj).length > 0 ? obj : undefined);
+    const rest = { ...(drafts[cap] ?? {}) };
+    delete rest[oldPattern];
+    drafts[cap] = rest;
+  }
+
+  function addPattern(cap: string) {
+    pending[cap] = [...(pending[cap] ?? []), ""];
+  }
+
+  function setPendingDraft(cap: string, index: number, text: string) {
+    const list = [...(pending[cap] ?? [])];
+    list[index] = text;
+    pending[cap] = list;
+  }
+
+  function commitPending(cap: string, index: number) {
+    const list = pending[cap] ?? [];
+    const draft = list[index];
+    if (draft === undefined) return;
+    pending[cap] = list.filter((_, i) => i !== index);
+    if (draft) {
+      const obj = patternObj(cap);
+      obj[draft] = obj[draft] ?? "ask";
+      store.patch(["permission", cap], obj);
+    }
+  }
+
+  function dropPending(cap: string, index: number) {
+    pending[cap] = (pending[cap] ?? []).filter((_, i) => i !== index);
   }
 
   function setPatternAction(cap: string, pattern: string, action: string) {
-    const current = getPerm(cap);
-    const obj: Record<string, string> = typeof current === "object" && current !== null ? { ...current } : {};
+    const obj = patternObj(cap);
     obj[pattern] = action;
     store.patch(["permission", cap], obj);
   }
 
   function removePattern(cap: string, pattern: string) {
-    const current = getPerm(cap);
-    const obj: Record<string, string> = typeof current === "object" && current !== null ? { ...current } : {};
+    const obj = patternObj(cap);
     delete obj[pattern];
     store.patch(["permission", cap], Object.keys(obj).length > 0 ? obj : undefined);
   }
@@ -73,7 +118,7 @@
 {#each PERMISSION_CAPABILITIES as cap}
   {@const perm = getPerm(cap)}
   {@const isPattern = typeof perm === "object" && perm !== null}
-  {@const error = store.allErrors.find((e) => e.path === `/permission/${cap}`)?.message}
+  {@const error = store.allErrors.find((e) => e.path === `/permission/${cap}` || e.path.startsWith(`/permission/${cap}/`))?.message}
 
   <div class="cap">
     <div class="cap-header">
@@ -83,16 +128,30 @@
 
     {#if isPattern}
       <div class="pattern-list">
-        {#each Object.entries(perm) as [pattern, action]}
+        {#each Object.entries(perm) as [pattern, action] (pattern)}
           <div class="pattern-row">
-            <input type="text" value={pattern} placeholder="pattern"
-              oninput={(e) => setPattern(cap, pattern, (e.currentTarget as HTMLInputElement).value)} />
+            <input type="text" value={draftFor(cap, pattern)} placeholder="pattern"
+              oninput={(e) => setDraft(cap, pattern, (e.currentTarget as HTMLInputElement).value)}
+              onblur={() => commitDraft(cap, pattern)}
+              onkeydown={(e) => { if (e.key === "Enter") commitDraft(cap, pattern); }} />
             <select value={action} onchange={(e) => setPatternAction(cap, pattern, (e.currentTarget as HTMLSelectElement).value)}>
               {#each ["ask", "allow", "deny"] as opt}
                 <option value={opt} selected={action === opt}>{opt}</option>
               {/each}
             </select>
             <button class="danger" onclick={() => removePattern(cap, pattern)}>×</button>
+          </div>
+        {/each}
+        {#each (pending[cap] ?? []) as draft, i}
+          <div class="pattern-row">
+            <input type="text" value={draft} placeholder="pattern"
+              oninput={(e) => setPendingDraft(cap, i, (e.currentTarget as HTMLInputElement).value)}
+              onblur={() => commitPending(cap, i)}
+              onkeydown={(e) => { if (e.key === "Enter") commitPending(cap, i); }} />
+            <select value="ask" disabled>
+              <option value="ask">ask</option>
+            </select>
+            <button class="danger" onclick={() => dropPending(cap, i)}>×</button>
           </div>
         {/each}
         <button onclick={() => addPattern(cap)}>+ add pattern</button>
@@ -104,15 +163,15 @@
             <option value={opt} selected={(perm ?? "(unset)") === opt}>{opt}</option>
           {/each}
         </select>
-        {#if PATTERN_CAPS.includes(cap as any)}
-          <button class="add-pattern" onclick={() => addPattern(cap)}>+ pattern rules</button>
+        {#if PATTERN_CAPS.includes(cap)}
+          <button class="add-pattern" onclick={() => convertToPatterns(cap)}>+ pattern rules</button>
         {/if}
       </div>
     {/if}
   </div>
 {/each}
 
-<h2>Tools (deprecated)</h2>
+<h2>Tools</h2>
 <p class="help">Boolean tool enable/disable map. Prefer the permission controls above.</p>
 <div class="tools">
   {#each Object.entries(getTools()) as [name, enabled]}
