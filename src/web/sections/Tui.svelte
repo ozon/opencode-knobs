@@ -1,12 +1,17 @@
 <script lang="ts">
   import type { DocStore } from "../state/doc-store.svelte";
   import SchemaForm from "../components/SchemaForm.svelte";
+  import { entries } from "../schema/walker";
 
   let { store }: { store: DocStore } = $props();
+
+  const keys = $derived(
+    store.schema ? [...entries(store.schema, store.defs, store.defName)].map(([name]) => name).filter((n) => n !== "keybinds") : [],
+  );
 </script>
 
 <h2>TUI</h2>
-<SchemaForm {store} schema={store.schema} path={[]} />
+<SchemaForm {store} schema={store.schema} path={[]} onlyKeys={keys} />
 
 <div class="keybinds-note">
   <p>Keybindings can only be edited in the <strong>Raw</strong> tab.</p>
