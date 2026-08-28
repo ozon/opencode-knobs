@@ -34,8 +34,8 @@ test("parseFlags multiple flags combined", () => {
   expect(result).toEqual({ host: "0.0.0.0", port: 3000, idleTimeout: 10 });
 });
 
-test("parseFlags rejects port 0", () => {
-  expect(() => parseFlags(["--port", "0"])).toThrow("invalid --port");
+test("parseFlags accepts port 0 (OS-assigned)", () => {
+  expect(parseFlags(["--port", "0"])).toMatchObject({ port: 0 });
 });
 
 test("parseFlags rejects negative port", () => {

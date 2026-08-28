@@ -15,7 +15,7 @@ export function parseFlags(argv: string[]): { host: string; port: number; idleTi
     else if (arg === "--idle-timeout") flags.idleTimeout = Number(next());
     else if (arg.startsWith("--idle-timeout=")) flags.idleTimeout = Number(arg.slice(15));
   }
-  if (!Number.isInteger(flags.port) || flags.port < 1 || flags.port > 65535) {
+  if (!Number.isInteger(flags.port) || flags.port < 0 || flags.port > 65535) {
     throw new Error(`invalid --port: ${flags.port}`);
   }
   if (!Number.isFinite(flags.idleTimeout) || flags.idleTimeout < 0) {
@@ -52,16 +52,14 @@ if (import.meta.main) {
     idleTimer.unref?.();
   }
 
-  const app = createApp({
-    host,
-    port,
-    onAuthenticatedRequest: armIdleTimer,
-  });
+  const appOpts = { host, port, onAuthenticatedRequest: armIdleTimer };
+  const app = createApp(appOpts);
 
   armIdleTimer();
   startModelsFetch();
 
   const server = Bun.serve({ hostname: host, port, fetch: app.fetch });
+  appOpts.port = server.port;
 
   const url = `http://${host === "0.0.0.0" ? "127.0.0.1" : host}:${server.port}`;
   console.log("");
