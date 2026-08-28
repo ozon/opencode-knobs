@@ -6,6 +6,8 @@
   import Permissions from "./sections/Permissions.svelte";
   import Providers from "./sections/Providers.svelte";
   import Agents from "./sections/Agents.svelte";
+  import Mcp from "./sections/Mcp.svelte";
+  import FormatterLsp from "./sections/FormatterLsp.svelte";
   import { api } from "./api";
   import { DocStore } from "./state/doc-store.svelte";
   import { ensureValidators } from "./state/validate";
@@ -134,11 +136,11 @@
   {:else if activeTab === "agents"}
     <Agents store={configDoc} />
     {:else if activeTab === "mcp"}
-      <p>MCP (coming next)</p>
+      <Mcp store={configDoc} />
     {:else if activeTab === "permissions"}
       <Permissions store={configDoc} />
     {:else if activeTab === "formatter"}
-      <p>Formatter & LSP (coming next)</p>
+      <FormatterLsp store={configDoc} />
     {:else if activeTab === "tui"}
       <Tui store={tuiDoc} />
     {:else if activeTab === "misc"}
