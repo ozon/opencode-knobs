@@ -1,4 +1,4 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
+import { describe, expect, test, mock, beforeEach, afterAll } from "bun:test";
 
 // ---- ApiError ----
 
@@ -40,6 +40,10 @@ describe("api.request", () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  afterAll(() => {
     globalThis.fetch = originalFetch;
   });
 
