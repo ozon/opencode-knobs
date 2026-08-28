@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, dirname, basename } from "node:path";
+import { randomBytes } from "node:crypto";
 import { parse, printParseErrorCode, type ParseError } from "jsonc-parser";
 import Ajv2020 from "ajv/dist/2020.js";
 import { DOC_FILES, type DocError, type DocId } from "../shared/types";
@@ -78,4 +79,53 @@ export function validateDoc(doc: DocId, json: unknown): DocError[] {
 
 export function schemaManifest(): { fetchedAt: string } {
   return JSON.parse(readFileSync(new URL("manifest.json", schemasDir), "utf8"));
+}
+
+export type SaveOutcome =
+  | { status: "syntax"; errors: DocError[] }
+  | { status: "schema"; errors: DocError[] }
+  | { status: "ok"; backupPath?: string };
+
+export function atomicWrite(filePath: string, content: string): void {
+  const tmp = join(dirname(filePath), `.${basename(filePath)}.${randomBytes(4).toString("hex")}.tmp`);
+  writeFileSync(tmp, content, "utf8");
+  renameSync(tmp, filePath);
+}
+
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+export function createBackup(filePath: string): string {
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const backupPath = `${filePath}.bak-${stamp}`;
+  copyFileSync(filePath, backupPath);
+  rotateBackups(filePath);
+  return backupPath;
+}
+
+export function rotateBackups(filePath: string, keep = 5): void {
+  const dir = dirname(filePath);
+  const base = basename(filePath);
+  const backups = readdirSync(dir)
+    .filter((f) => f.startsWith(`${base}.bak-`))
+    .sort()
+    .reverse();
+  for (const old of backups.slice(keep)) {
+    rmSync(join(dir, old));
+  }
+}
+
+export function saveDoc(doc: DocId, raw: string, force: boolean): SaveOutcome {
+  const { json, errors } = parseRaw(raw);
+  if (errors.length > 0) return { status: "syntax", errors };
+  const schemaErrors = validateDoc(doc, json);
+  if (schemaErrors.length > 0 && !force) return { status: "schema", errors: schemaErrors };
+  const path = docPath(doc);
+  mkdirSync(dirname(path), { recursive: true });
+  let backupPath: string | undefined;
+  if (existsSync(path)) backupPath = createBackup(path);
+  atomicWrite(path, raw);
+  return { status: "ok", backupPath };
 }
