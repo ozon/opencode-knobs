@@ -59,7 +59,7 @@ if (import.meta.main) {
   startModelsFetch();
 
   const server = Bun.serve({ hostname: host, port, fetch: app.fetch });
-  appOpts.port = server.port;
+  appOpts.port = server.port ?? port;
 
   const url = `http://${host === "0.0.0.0" ? "127.0.0.1" : host}:${server.port}`;
   console.log("");

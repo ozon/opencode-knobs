@@ -48,7 +48,7 @@ describe("api.request", () => {
   });
 
   test("api.health calls GET /api/health", async () => {
-    const fetchMock = mock(() =>
+    const fetchMock = mock((_url: string, _init?: RequestInit) =>
       Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json" } })),
     );
     globalThis.fetch = fetchMock as any;
@@ -63,7 +63,7 @@ describe("api.request", () => {
   });
 
   test("api.login calls POST /api/login with code", async () => {
-    const fetchMock = mock(() =>
+    const fetchMock = mock((_url: string, _init?: RequestInit) =>
       Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json" } })),
     );
     globalThis.fetch = fetchMock as any;
@@ -94,7 +94,7 @@ describe("api.request", () => {
   });
 
   test("sets content-type and x-requested-with for POST", async () => {
-    const fetchMock = mock(() =>
+    const fetchMock = mock((_url: string, _init?: RequestInit) =>
       Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json" } })),
     );
     globalThis.fetch = fetchMock as any;
@@ -108,7 +108,7 @@ describe("api.request", () => {
   });
 
   test("uses credentials: same-origin", async () => {
-    const fetchMock = mock(() =>
+    const fetchMock = mock((_url: string, _init?: RequestInit) =>
       Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json" } })),
     );
     globalThis.fetch = fetchMock as any;

@@ -7,4 +7,8 @@ if (!existsSync(new URL("../dist/index.html", import.meta.url))) {
   if (res.status !== 0) process.exit(res.status ?? 1);
 }
 
-await import("../src/server/index.ts");
+const res = spawnSync("bun", ["src/server/index.ts", ...process.argv.slice(2)], {
+  stdio: "inherit",
+  cwd: new URL("..", import.meta.url).pathname,
+});
+process.exit(res.status ?? 1);
