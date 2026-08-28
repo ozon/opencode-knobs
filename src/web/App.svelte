@@ -8,6 +8,7 @@
   import Agents from "./sections/Agents.svelte";
   import Mcp from "./sections/Mcp.svelte";
   import FormatterLsp from "./sections/FormatterLsp.svelte";
+  import Raw from "./sections/Raw.svelte";
   import { api } from "./api";
   import { DocStore } from "./state/doc-store.svelte";
   import { ensureValidators } from "./state/validate";
@@ -146,7 +147,7 @@
     {:else if activeTab === "misc"}
       <Misc store={configDoc} />
     {:else if activeTab === "raw"}
-      <p>Raw (coming next)</p>
+      <Raw store={currentDoc} onForceSave={forceSave} />
     {/if}
   </main>
 {/if}
