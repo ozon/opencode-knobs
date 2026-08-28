@@ -1,9 +1,9 @@
 <script lang="ts">
   let {
-    value, options, label, onchange, filterFn,
+    value, options, label, onchange, oninput, filterFn,
   }: {
     value: string; options: Array<{ id: string; label: string }>; label?: string;
-    onchange: (v: string) => void; filterFn?: (opt: { id: string; label: string }, query: string) => boolean;
+    onchange: (v: string) => void; oninput?: (v: string) => void; filterFn?: (opt: { id: string; label: string }, query: string) => boolean;
   } = $props();
 
   let query = $state(value);
@@ -21,14 +21,18 @@
     if (!open) { open = true; return; }
     if (e.key === "ArrowDown") { highlight = Math.min(highlight + 1, filtered.length - 1); e.preventDefault(); }
     else if (e.key === "ArrowUp") { highlight = Math.max(highlight - 1, 0); e.preventDefault(); }
-    else if (e.key === "Enter" && highlight >= 0) { select(filtered[highlight].id); e.preventDefault(); }
+    else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlight >= 0) select(filtered[highlight].id);
+      else { onchange(query); open = false; }
+    }
     else if (e.key === "Escape") { open = false; }
   }
 </script>
 
 <div class="combobox">
   {#if label}<label>{label}</label>{/if}
-  <input type="text" value={query} oninput={(e) => { query = (e.currentTarget as HTMLInputElement).value; open = true; highlight = -1; }}
+  <input type="text" value={query} oninput={(e) => { query = (e.currentTarget as HTMLInputElement).value; open = true; highlight = -1; oninput?.(query); }}
     onfocus={() => { open = true; }} onblur={() => { setTimeout(() => { open = false; }, 150); }} onkeydown={onKey} />
   {#if open && filtered.length > 0}
     <ul>

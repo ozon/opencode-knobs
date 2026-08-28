@@ -4,6 +4,7 @@
   import Tui from "./sections/Tui.svelte";
   import Misc from "./sections/Misc.svelte";
   import Permissions from "./sections/Permissions.svelte";
+  import Providers from "./sections/Providers.svelte";
   import { api } from "./api";
   import { DocStore } from "./state/doc-store.svelte";
   import { ensureValidators } from "./state/validate";
@@ -127,10 +128,10 @@
   <main>
     {#if activeTab === "general"}
       <General store={configDoc} />
-    {:else if activeTab === "providers"}
-      <p>Providers (coming next)</p>
-    {:else if activeTab === "agents"}
-      <p>Agents (coming next)</p>
+  {:else if activeTab === "providers"}
+    <Providers store={configDoc} />
+  {:else if activeTab === "agents"}
+    <p>Agents (coming next)</p>
     {:else if activeTab === "mcp"}
       <p>MCP (coming next)</p>
     {:else if activeTab === "permissions"}
