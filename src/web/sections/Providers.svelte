@@ -239,7 +239,8 @@
                 </summary>
                 <div class="model-body">
                   <Field label="model id">
-                    <Combobox value={modelId} options={modelOptions(provId)} onchange={(v) => renameModel(provId, modelId, v)} />
+                    <input type="text" value={modelId}
+                      onchange={(e) => renameModel(provId, modelId, (e.currentTarget as HTMLInputElement).value)} />
                   </Field>
                   {#if metaText}<p class="meta">{metaText}</p>{/if}
                   <Field label="name">

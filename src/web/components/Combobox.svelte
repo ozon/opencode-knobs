@@ -10,6 +10,10 @@
   let open = $state(false);
   let highlight = $state(-1);
 
+  $effect(() => {
+    query = value;
+  });
+
   let filtered = $derived(
     query
       ? (options ?? []).filter((o) => filterFn ? filterFn(o, query) : o.id.toLowerCase().includes(query.toLowerCase()) || o.label.toLowerCase().includes(query.toLowerCase()))

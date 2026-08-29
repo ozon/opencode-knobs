@@ -18,12 +18,13 @@
   let loading = $state(true);
   let serverGone = $state(false);
   let saveError = $state("");
+  let loadError = $state("");
   let activeTab = $state<"general"|"providers"|"agents"|"mcp"|"permissions"|"formatter"|"tui"|"misc"|"raw">("general");
-  let activeDoc = $state<"config"|"tui">("tui");
+  let activeDoc = $state<"config"|"tui">("config");
 
   const configDoc = new DocStore("config");
   const tuiDoc = new DocStore("tui");
-  const currentDoc = $derived(activeTab === "tui" ? tuiDoc : activeDoc === "tui" ? tuiDoc : configDoc);
+  const currentDoc = $derived(activeTab === "tui" ? tuiDoc : activeTab === "raw" && activeDoc === "tui" ? tuiDoc : configDoc);
   const anyDirty = $derived(configDoc.dirty || tuiDoc.dirty);
   const hasErrors = $derived(!configDoc.valid || !tuiDoc.valid);
 
@@ -34,8 +35,12 @@
   }
 
   async function loadAll() {
-    await ensureValidators();
-    await Promise.all([configDoc.load(), tuiDoc.load(), loadCatalog()]);
+    await ensureValidators().catch((e) => console.error("ensureValidators failed", e));
+    const results = await Promise.allSettled([configDoc.load(), tuiDoc.load(), loadCatalog()]);
+    const failed = results
+      .filter((r) => r.status === "rejected")
+      .map((r) => (r as PromiseRejectedResult).reason?.message ?? String((r as PromiseRejectedResult).reason));
+    if (failed.length > 0) loadError = `Failed to load: ${failed.join("; ")}`;
   }
 
   $effect(() => {
@@ -130,6 +135,9 @@
   </header>
 
   <main>
+    {#if loadError}
+      <div class="load-error">⚠ {loadError}</div>
+    {/if}
     {#if activeTab === "general"}
       <General store={configDoc} />
   {:else if activeTab === "providers"}
@@ -182,6 +190,7 @@
   .dot.c { color: var(--warn); }
   .dot.t { color: var(--accent); }
   .error { color: var(--danger); font-size: 11px; }
+  .load-error { background: var(--bg-2); border: 1px solid var(--danger); color: var(--danger); padding: 8px 12px; border-radius: var(--radius); margin-bottom: 12px; font-size: 12px; }
   main { padding: 16px; max-width: 900px; margin: 0 auto; }
 
   @media (max-width: 640px) {

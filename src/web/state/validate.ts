@@ -12,9 +12,21 @@ async function loadValidators() {
     fetch("/api/schema/model").then((r) => r.json()).catch(() => ({ $defs: { Model: { type: "string" } } })),
   ]);
   const ajv = new Ajv2020({ allErrors: true, strict: false });
-  ajv.addSchema(modelSchema);
-  configValidator = ajv.compile(configSchema);
-  tuiValidator = ajv.compile(tuiSchema);
+  try {
+    ajv.addSchema(modelSchema, "https://models.dev/model-schema.json");
+  } catch (e) {
+    console.error("model schema add failed", e);
+  }
+  try {
+    configValidator = ajv.compile(configSchema);
+  } catch (e) {
+    console.error("config schema compile failed", e);
+  }
+  try {
+    tuiValidator = ajv.compile(tuiSchema);
+  } catch (e) {
+    console.error("tui schema compile failed", e);
+  }
 }
 
 let validatorsReady: Promise<void> | null = null;
