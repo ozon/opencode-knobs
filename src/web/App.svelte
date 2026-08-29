@@ -159,17 +159,20 @@
   }
   .server-gone h2 { color: var(--danger); }
   header {
-    display: flex; align-items: center; gap: 16px; padding: 8px 16px;
+    display: flex; align-items: center; gap: 12px; padding: 8px 16px;
     background: var(--bg-1); border-bottom: 1px solid var(--bg-3); position: sticky; top: 0; z-index: 50;
   }
   h1 { font-size: 14px; color: var(--accent); margin: 0; white-space: nowrap; }
-  nav { display: flex; gap: 2px; flex: 1; overflow-x: auto; }
+  nav { display: flex; gap: 2px; flex: 1; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  nav::-webkit-scrollbar { height: 2px; }
+  nav::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 2px; }
   nav button {
     background: none; border: none; color: var(--fg-2); font-size: 12px; padding: 6px 10px; border-radius: var(--radius);
+    white-space: nowrap; flex-shrink: 0;
   }
   nav button:hover { color: var(--fg-0); background: var(--bg-2); }
   nav button.active { color: var(--accent); background: var(--bg-2); }
-  .header-right { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .header-right { display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-shrink: 0; }
   .doc-switcher { display: flex; gap: 2px; background: var(--bg-2); border-radius: var(--radius); padding: 2px; }
   .doc-switcher button { background: none; border: none; color: var(--fg-2); font-size: 11px; padding: 2px 8px; border-radius: 3px; }
   .doc-switcher button.active { color: var(--fg-0); background: var(--bg-3); }
@@ -180,4 +183,14 @@
   .dot.t { color: var(--accent); }
   .error { color: var(--danger); font-size: 11px; }
   main { padding: 16px; max-width: 900px; margin: 0 auto; }
+
+  @media (max-width: 640px) {
+    header { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+    h1 { font-size: 13px; }
+    nav { order: 3; width: 100%; }
+    nav button { font-size: 13px; padding: 8px 12px; }
+    .header-right { gap: 6px; }
+    .save { font-size: 13px; padding: 6px 10px; }
+    main { padding: 12px; }
+  }
 </style>

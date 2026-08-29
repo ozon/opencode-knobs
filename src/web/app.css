@@ -27,6 +27,7 @@ body {
   font-family: var(--font);
   font-size: 13px;
   line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
 }
 
 button {
@@ -37,6 +38,7 @@ button {
   padding: var(--spacing-xs) var(--spacing-sm);
   cursor: pointer;
   font: inherit;
+  touch-action: manipulation;
 }
 button:hover { background: var(--bg-3); }
 button.primary { background: var(--accent); color: var(--bg-0); border-color: var(--accent); }
@@ -52,6 +54,7 @@ input, textarea, select {
   padding: var(--spacing-xs) var(--spacing-sm);
   font: inherit;
   outline: none;
+  min-width: 0;
 }
 input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 
@@ -63,3 +66,9 @@ label {
 }
 .field { margin-bottom: var(--spacing-md); }
 .field .help { font-size: 11px; color: var(--fg-2); margin-top: var(--spacing-xs); }
+
+@media (max-width: 640px) {
+  body { font-size: 14px; }
+  button { padding: 8px 12px; font-size: 14px; }
+  input, textarea, select { padding: 8px 10px; font-size: 14px; }
+}

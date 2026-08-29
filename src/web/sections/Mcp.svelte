@@ -184,4 +184,11 @@
   .toggle input { width: auto; }
   .error { color: var(--danger); font-size: 11px; }
   button { font-size: 11px; padding: 2px 6px; }
+
+  @media (max-width: 640px) {
+    .card-body { padding: 10px; }
+    .row :global(.field) { min-width: 100%; }
+    .add-row { flex-wrap: wrap; }
+    .add-row input[type="text"] { max-width: 100%; }
+  }
 </style>

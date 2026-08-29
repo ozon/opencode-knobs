@@ -17,6 +17,11 @@
 
 <style>
   .row { display: flex; gap: 4px; margin-bottom: 4px; }
-  .row input { flex: 1; }
+  .row input { flex: 1; min-width: 0; }
   button { font-size: 11px; padding: 2px 6px; }
+
+  @media (max-width: 640px) {
+    .row { flex-wrap: wrap; }
+    .row input { min-width: 100%; }
+  }
 </style>

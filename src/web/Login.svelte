@@ -50,6 +50,7 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    padding: 16px;
   }
   .card {
     background: var(--bg-1);
@@ -57,6 +58,7 @@
     border-radius: 8px;
     padding: 32px;
     max-width: 360px;
+    width: 100%;
     text-align: center;
   }
   h1 { font-size: 16px; margin-bottom: 8px; color: var(--accent); }
@@ -64,4 +66,10 @@
   input { width: 100%; text-align: center; font-size: 18px; letter-spacing: 3px; margin-bottom: 12px; }
   .error { color: var(--danger); margin-bottom: 8px; }
   button { width: 100%; padding: 8px; margin-top: 4px; }
+
+  @media (max-width: 640px) {
+    .card { padding: 24px 16px; }
+    h1 { font-size: 15px; }
+    input { font-size: 16px; letter-spacing: 2px; }
+  }
 </style>

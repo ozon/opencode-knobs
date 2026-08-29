@@ -369,4 +369,13 @@
   .error { color: var(--danger); font-size: 11px; }
   summary { cursor: pointer; }
   button { font-size: 11px; padding: 2px 6px; }
+
+  @media (max-width: 640px) {
+    .card-body { padding: 10px; }
+    .model-body { padding-left: 8px; }
+    .row :global(.field) { min-width: 100%; }
+    .variant-row { flex-wrap: wrap; }
+    .add-row { flex-wrap: wrap; }
+    .add-row :global(.combobox) { max-width: 100%; }
+  }
 </style>

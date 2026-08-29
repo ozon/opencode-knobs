@@ -197,10 +197,10 @@
   .cap { margin-bottom: 12px; padding: 8px; background: var(--bg-1); border-radius: var(--radius); }
   .cap-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .cap-header strong { font-size: 12px; min-width: 160px; font-family: var(--font); }
-  .cap-controls { display: flex; gap: 8px; align-items: center; }
+  .cap-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .pattern-list { margin-left: 12px; }
-  .pattern-row { display: flex; gap: 4px; margin-bottom: 4px; }
-  .pattern-row input:first-child { flex: 1; font-family: var(--font); font-size: 12px; }
+  .pattern-row { display: flex; gap: 4px; margin-bottom: 4px; flex-wrap: wrap; }
+  .pattern-row input:first-child { flex: 1; min-width: 120px; font-family: var(--font); font-size: 12px; }
   .pattern-row select { width: 100px; }
   .error { color: var(--danger); font-size: 11px; }
   button { font-size: 11px; padding: 2px 6px; }
@@ -209,4 +209,15 @@
   .tool-row { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
   .tool-row label { display: flex; gap: 6px; align-items: center; font-size: 12px; font-family: var(--font); flex: 1; }
   .tool-row input[type="text"] { flex: 1; font-family: var(--font); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .cap-header strong { min-width: auto; font-size: 13px; }
+    .cap-controls { gap: 6px; }
+    .pattern-list { margin-left: 0; }
+    .pattern-row { gap: 6px; }
+    .pattern-row input:first-child { min-width: 100%; }
+    .pattern-row select { width: 90px; }
+    .tool-row { flex-wrap: wrap; }
+    .tool-row label { min-width: 0; }
+  }
 </style>

@@ -23,4 +23,10 @@
   .row input:first-child { width: 140px; }
   .row input:nth-child(2) { flex: 1; }
   button { font-size: 11px; padding: 2px 6px; }
+
+  @media (max-width: 640px) {
+    .row { flex-wrap: wrap; }
+    .row input:first-child { width: 100%; }
+    .row input:nth-child(2) { min-width: 100%; }
+  }
 </style>

@@ -135,4 +135,10 @@
   .add-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 12px; }
   .add-row input { flex: 1; max-width: 320px; font-family: var(--font); font-size: 12px; }
   button { font-size: 11px; padding: 2px 6px; }
+
+  @media (max-width: 640px) {
+    .card-body { padding: 10px; }
+    .add-row { flex-wrap: wrap; }
+    .add-row input { max-width: 100%; }
+  }
 </style>

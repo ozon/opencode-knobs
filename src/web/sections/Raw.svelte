@@ -133,4 +133,9 @@
     border: none; border-radius: var(--radius); cursor: pointer; font: inherit;
   }
   .force-btn:hover { opacity: 0.8; }
+
+  @media (max-width: 640px) {
+    .raw-section { height: calc(100vh - 140px); }
+    .raw-header { flex-wrap: wrap; gap: 6px; }
+  }
 </style>
