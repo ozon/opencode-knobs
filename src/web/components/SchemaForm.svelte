@@ -56,6 +56,13 @@
     return s?.description ?? s?.markdownDescription ?? "";
   }
 
+  function defaultHint(s: any): string {
+    if (s?.default === undefined) return "";
+    const d = s.default;
+    const pretty = typeof d === "object" ? JSON.stringify(d) : String(d);
+    return `default: ${pretty}`;
+  }
+
   function patchField(fieldPath: (string|number)[], value: unknown) {
     store.patch(fieldPath, value);
   }
@@ -71,31 +78,34 @@
   {@const options = inferEnumOptions(resolved)}
   {@const anyOf = inferAnyOfOptions(resolved)}
   {@const help = getHelpText(resolved)}
+  {@const def = resolved?.default}
+  {@const displayHelp = [help, defaultHint(resolved)].filter(Boolean).join("  ·  ")}
   {@const error = store.allErrors.find((e) => e.path === "/" + fieldPath.join("/"))?.message}
+  {@const unsetLabel = def !== undefined ? `(unset — default: ${typeof def === "object" ? JSON.stringify(def) : def})` : "(unset)"}
 
   {#if resolved?.type === "boolean" || anyOf?.some((a: any) => a.type === "boolean")}
     {@const opts = anyOf ? anyOf.filter((a: any) => a.type !== "boolean").map((a: any) => a.enum ?? [a.const]).flat().filter(Boolean) : []}
     {#if opts.length > 0}
-      <Field label={name} {help} {error}>
+      <Field label={name} help={displayHelp} {error}>
         <select value={value ?? ""} onchange={(e) => { const v = (e.currentTarget as HTMLSelectElement).value; patchField(fieldPath, v === "true" ? true : v === "false" ? false : v); }}>
           {#each ["", "true", "false", ...opts] as opt}
-            <option value={opt}>{opt || "(unset)"}</option>
+            <option value={opt}>{opt === "" ? unsetLabel : opt}</option>
           {/each}
         </select>
       </Field>
     {:else}
-      <Field label={name} {help} {error}>
+      <Field label={name} help={displayHelp} {error}>
         <label class="toggle">
           <input type="checkbox" checked={!!value} onchange={(e) => patchField(fieldPath, (e.currentTarget as HTMLInputElement).checked)} />
-          <span>{value ? "on" : "off"}</span>
+          <span>{value ? "on" : "off"}{def !== undefined ? ` (default ${def ? "on" : "off"})` : ""}</span>
         </label>
       </Field>
     {/if}
 
   {:else if options}
-    <Field label={name} {help} {error}>
+    <Field label={name} help={displayHelp} {error}>
       <select value={value ?? ""} onchange={(e) => patchField(fieldPath, (e.currentTarget as HTMLSelectElement).value || undefined)}>
-        <option value="">(unset)</option>
+        <option value="">{unsetLabel}</option>
         {#each options as opt}
           <option value={opt} selected={value === opt}>{opt}</option>
         {/each}
@@ -103,43 +113,43 @@
     </Field>
 
   {:else if resolved?.type === "integer" || resolved?.type === "number"}
-    <Field label={name} {help} {error}>
-      <input type="number" value={value ?? ""} min={resolved.minimum} max={resolved.maximum}
+    <Field label={name} help={displayHelp} {error}>
+      <input type="number" value={value ?? ""} min={resolved.minimum} max={resolved.maximum} placeholder={def != null ? String(def) : ""}
         onchange={(e) => { const v = (e.currentTarget as HTMLInputElement).value; patchField(fieldPath, v === "" ? undefined : Number(v)); }} />
     </Field>
 
   {:else if resolved?.type === "string"}
     {#if isSecret(fieldPath)}
-      <Field label={name} {help} {error}>
+      <Field label={name} help={displayHelp} {error}>
         <MaskedSecret {value} onchange={(v) => patchField(fieldPath, v)} />
       </Field>
     {:else}
-      <Field label={name} {help} {error}>
-        <input type="text" value={value ?? ""} onchange={(e) => patchField(fieldPath, (e.currentTarget as HTMLInputElement).value || undefined)} />
+      <Field label={name} help={displayHelp} {error}>
+        <input type="text" value={value ?? ""} placeholder={def != null ? String(def) : ""} onchange={(e) => patchField(fieldPath, (e.currentTarget as HTMLInputElement).value || undefined)} />
       </Field>
     {/if}
 
   {:else if resolved?.type === "array" && resolved?.items?.type === "string"}
-    <Field label={name} {help} {error}>
+    <Field label={name} help={displayHelp} {error}>
       <StringList {value} onchange={(v) => patchField(fieldPath, v)} />
     </Field>
 
   {:else if resolved?.type === "object" && resolved?.properties}
     <details open={!compact}>
-      <summary>{name}</summary>
+      <summary>{name}{def !== undefined ? `  (default set)` : ""}</summary>
       <div class="nested">
         <svelte:self {store} schema={resolved} path={fieldPath} {secretPaths} compact />
       </div>
     </details>
 
   {:else if resolved?.type === "object" && resolved?.additionalProperties}
-    <Field label={name} {help} {error}>
+    <Field label={name} help={displayHelp} {error}>
       <KVEditor {value} onchange={(v) => patchField(fieldPath, v)} />
     </Field>
 
   {:else}
-    <Field label={name} {help} {error}>
-      <input type="text" value={value === undefined ? "" : JSON.stringify(value)}
+    <Field label={name} help={displayHelp} {error}>
+      <input type="text" value={value === undefined ? "" : JSON.stringify(value)} placeholder={def != null ? JSON.stringify(def) : ""}
         onchange={(e) => { const v = (e.currentTarget as HTMLInputElement).value; try { patchField(fieldPath, JSON.parse(v)); } catch { patchField(fieldPath, v || undefined); } }} />
     </Field>
   {/if}
