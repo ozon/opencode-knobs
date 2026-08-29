@@ -9,7 +9,7 @@ async function loadValidators() {
     import("ajv/dist/2020.js"),
     fetch("/api/schema/config").then((r) => r.json()),
     fetch("/api/schema/tui").then((r) => r.json()),
-    fetch("https://models.dev/model-schema.json").then((r) => r.json()).catch(() => ({ $defs: { Model: { type: "string" } } })),
+    fetch("/api/schema/model").then((r) => r.json()).catch(() => ({ $defs: { Model: { type: "string" } } })),
   ]);
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   ajv.addSchema(modelSchema);

@@ -14,9 +14,9 @@ export class DocStore {
   schemaErrors = $state<DocError[]>([]);
   loaded = $state(false);
   serverVersion = $state("");
-  schema: any = $state(null);
-  defs: Record<string, any> = $state({});
-  defName = $state("");
+  schema: any = $state.raw(null);
+  defs: Record<string, any> = $state.raw({});
+  defName = $state.raw("");
 
   get valid(): boolean {
     return this.parseErrors.length === 0 && this.schemaErrors.length === 0;

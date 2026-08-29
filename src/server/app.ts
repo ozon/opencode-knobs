@@ -118,6 +118,11 @@ export function createApp(opts: AppOptions) {
     return c.json({ valid: true, errors: [], backupPath: outcome.backupPath });
   });
 
+  app.get("/api/schema/model", (c) => {
+    const schema = JSON.parse(readFileSync(new URL("model-schema.json", schemasDir), "utf8"));
+    return c.json(schema);
+  });
+
   app.get("/api/schema/:doc", (c) => {
     const doc = c.req.param("doc") as DocId;
     if (!DOCS.includes(doc)) return c.json({ error: "unknown doc" }, 404);

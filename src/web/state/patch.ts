@@ -37,10 +37,20 @@ function removeProperty(text: string, path: (string | number)[]): string {
 
   let end = valNode.offset + valNode.length;
   while (end < text.length && text[end] === ",") end++;
-  while (end < text.length && (text[end] === "\n" || text[end] === "\r")) end++;
+  while (end < text.length && (text[end] === "\n" || text[end] === "\r" || text[end] === " " || text[end] === "\t")) end++;
 
   let lineStart = propNode.offset;
   while (lineStart > 0 && text[lineStart - 1] !== "\n") lineStart--;
+
+  if (end < text.length && (text[end] === "}" || text[end] === "]")) {
+    let pre = lineStart;
+    while (pre > 0 && (text[pre - 1] === " " || text[pre - 1] === "\t")) pre--;
+    if (pre > 0 && text[pre - 1] === ",") {
+      lineStart = pre - 1;
+      while (lineStart > 0 && text[lineStart - 1] !== "\n") lineStart--;
+      end = valNode.offset + valNode.length;
+    }
+  }
 
   return text.slice(0, lineStart) + text.slice(end);
 }

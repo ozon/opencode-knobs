@@ -60,18 +60,7 @@
     store.patch(fieldPath, value);
   }
 
-  function renderScalar(name: string, s: any, fieldPath: (string|number)[]) {
-    const val = getValue(store.json, fieldPath);
-    const help = getHelpText(s);
-    const error = store.allErrors.find((e) => e.path === "/" + fieldPath.join("/"))?.message;
-    const options = inferEnumOptions(s);
-    const anyOf = inferAnyOfOptions(s);
-    const isSecretField = isSecret(fieldPath);
 
-    if (s?.type === "boolean" || anyOf?.some((a: any) => a.type === "boolean")) {
-      return `<${name}>`;
-    }
-  }
 </script>
 
 {#each (onlyKeys ?? [...entries(schema, defs, store.defName)]) as entry}

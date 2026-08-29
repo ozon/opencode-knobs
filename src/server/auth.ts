@@ -4,10 +4,28 @@ export const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CODE_LENGTH = 8;
 const MAX_FAILURES = 5;
 const LOCKOUT_MS = 30_000;
+const MAX_FAILURE_ENTRIES = 10_000;
+const SWEEP_INTERVAL_MS = 60_000;
 
 let expectedCode = "";
 const sessions = new Map<string, number>();
 const failures = new Map<string, { count: number; lockedUntil: number }>();
+let lastSweep = Date.now();
+
+function sweepFailures() {
+  const now = Date.now();
+  if (now - lastSweep < SWEEP_INTERVAL_MS) return;
+  lastSweep = now;
+  for (const [ip, entry] of failures) {
+    if (entry.lockedUntil !== 0 && entry.lockedUntil < now) failures.delete(ip);
+  }
+  if (failures.size > MAX_FAILURE_ENTRIES) {
+    const entries = [...failures.entries()].sort((a, b) => a[1].lockedUntil - b[1].lockedUntil);
+    for (let i = 0; i < entries.length - MAX_FAILURE_ENTRIES / 2; i++) {
+      failures.delete(entries[i][0]);
+    }
+  }
+}
 
 export function initAuth(code: string): void {
   expectedCode = code;
@@ -49,6 +67,7 @@ export function destroySession(token: string): void {
 }
 
 export function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number } {
+  sweepFailures();
   const entry = failures.get(ip);
   if (!entry) return { allowed: true };
   if (entry.lockedUntil > Date.now()) {
