@@ -19,8 +19,9 @@ export function isDeprecated(name: string, schema: any, defName = ""): boolean {
 }
 
 export function* entries(schema: any, defs: Record<string, any> = {}, defName = ""): Generator<[string, any]> {
-  if (!schema?.properties) return;
-  for (const [name, propSchema] of Object.entries<Record<string, any>>(schema.properties)) {
+  const resolved = schema?.$ref ? resolveRef(schema, defs) : schema;
+  if (!resolved?.properties) return;
+  for (const [name, propSchema] of Object.entries<Record<string, any>>(resolved.properties)) {
     if (name === "$schema") continue;
     if (isDeprecated(name, propSchema, defName)) continue;
     yield [name, resolveRef(propSchema, defs)];
