@@ -8,10 +8,10 @@
   import Combobox from "./Combobox.svelte";
 
   let {
-    store, schema, path = [], onlyKeys, secretPaths = [], compact = false,
+    store, schema, path = [], onlyKeys, secretPaths = [], compact = false, suggestions = {},
   }: {
     store: DocStore; schema: any; path?: (string|number)[]; onlyKeys?: string[];
-    secretPaths?: string[]; compact?: boolean;
+    secretPaths?: string[]; compact?: boolean; suggestions?: Record<string, string[]>;
   } = $props();
 
   const defs = store.defs;
@@ -95,9 +95,10 @@
       </Field>
     {:else}
       <Field label={name} help={displayHelp} {error}>
-        <label class="toggle">
+        <label class="switch">
           <input type="checkbox" checked={!!value} onchange={(e) => patchField(fieldPath, (e.currentTarget as HTMLInputElement).checked)} />
-          <span>{value ? "on" : "off"}{def !== undefined ? ` (default ${def ? "on" : "off"})` : ""}</span>
+          <span class="slider"></span>
+          <span class="state">{value ? "on" : "off"}{def !== undefined ? ` (default ${def ? "on" : "off"})` : ""}</span>
         </label>
       </Field>
     {/if}
@@ -122,6 +123,11 @@
     {#if isSecret(fieldPath)}
       <Field label={name} help={displayHelp} {error}>
         <MaskedSecret {value} onchange={(v) => patchField(fieldPath, v)} />
+      </Field>
+    {:else if suggestions?.[name]?.length}
+      <Field label={name} help={displayHelp} {error}>
+        <Combobox value={value ?? ""} options={suggestions[name].map((id) => ({ id, label: id }))}
+          onchange={(v) => patchField(fieldPath, v || undefined)} oninput={(v) => patchField(fieldPath, v || undefined)} />
       </Field>
     {:else}
       <Field label={name} help={displayHelp} {error}>
@@ -160,6 +166,12 @@
   summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--accent); padding: 4px 0; }
   summary:hover { color: var(--accent-hover); }
   .nested { padding-left: 16px; border-left: 1px solid var(--bg-3); margin-top: 4px; }
-  .toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
-  .toggle input { width: auto; }
+  .switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .slider { position: relative; width: 36px; height: 18px; background: var(--bg-3); border-radius: 999px; transition: background 0.15s; flex-shrink: 0; }
+  .slider::before { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--fg-0); border-radius: 50%; transition: transform 0.15s; }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+  .switch input:focus-visible + .slider { outline: 2px solid var(--accent-hover); outline-offset: 2px; }
+  .state { color: var(--fg-1); }
 </style>
