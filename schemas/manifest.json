@@ -1,9 +1,9 @@
 {
-  "fetchedAt": "2026-08-28T09:18:02.177Z",
+  "fetchedAt": "2026-09-05T10:46:28.985Z",
   "files": {
     "config.json": {
       "url": "https://opencode.ai/config.json",
-      "bytes": 38773
+      "bytes": 39039
     },
     "tui.json": {
       "url": "https://opencode.ai/tui.json",
@@ -11,7 +11,7 @@
     },
     "model-schema.json": {
       "url": "https://models.dev/model-schema.json",
-      "bytes": 316468
+      "bytes": 321638
     }
   }
 }
