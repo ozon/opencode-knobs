@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, dirname, basename } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -88,7 +88,14 @@ export type SaveOutcome =
 
 export function atomicWrite(filePath: string, content: string): void {
   const tmp = join(dirname(filePath), `.${basename(filePath)}.${randomBytes(4).toString("hex")}.tmp`);
-  writeFileSync(tmp, content, "utf8");
+  let mode = 0o600;
+  try {
+    mode = statSync(filePath).mode & 0o777;
+  } catch {
+    // new file: default to owner-only
+  }
+  writeFileSync(tmp, content, { encoding: "utf8", mode });
+  chmodSync(tmp, mode);
   renameSync(tmp, filePath);
 }
 
@@ -101,6 +108,7 @@ export function createBackup(filePath: string): string {
   const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const backupPath = `${filePath}.bak-${stamp}`;
   copyFileSync(filePath, backupPath);
+  chmodSync(backupPath, statSync(filePath).mode & 0o777);
   rotateBackups(filePath);
   return backupPath;
 }

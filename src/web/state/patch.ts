@@ -11,53 +11,8 @@ export function detectIndent(raw: string): { insertSpaces: boolean; tabSize: num
   return { insertSpaces: true, tabSize: 2 };
 }
 
-function removeProperty(text: string, path: (string | number)[]): string {
-  const root = parseTree(text);
-  if (!root) return text;
-
-  let node: any = root;
-  for (let i = 0; i < path.length - 1; i++) {
-    if (!node?.children) return text;
-    const prop = node.children.find(
-      (c: any) => c.type === "property" && c.children?.[0]?.value === path[i]
-    );
-    if (!prop) return text;
-    node = prop.children[1];
-  }
-
-  if (!node?.children) return text;
-  const lastKey = path[path.length - 1];
-  const propIdx = node.children.findIndex(
-    (c: any) => c.type === "property" && c.children?.[0]?.value === lastKey
-  );
-  if (propIdx === -1) return text;
-  const propNode = node.children[propIdx];
-  const valNode = propNode.children?.[1];
-  if (!valNode) return text;
-
-  let end = valNode.offset + valNode.length;
-  while (end < text.length && text[end] === ",") end++;
-  while (end < text.length && (text[end] === "\n" || text[end] === "\r" || text[end] === " " || text[end] === "\t")) end++;
-
-  let lineStart = propNode.offset;
-  while (lineStart > 0 && text[lineStart - 1] !== "\n") lineStart--;
-
-  if (end < text.length && (text[end] === "}" || text[end] === "]")) {
-    let pre = lineStart;
-    while (pre > 0 && (text[pre - 1] === " " || text[pre - 1] === "\t")) pre--;
-    if (pre > 0 && text[pre - 1] === ",") {
-      lineStart = pre - 1;
-      while (lineStart > 0 && text[lineStart - 1] !== "\n") lineStart--;
-      end = valNode.offset + valNode.length;
-    }
-  }
-
-  return text.slice(0, lineStart) + text.slice(end);
-}
-
 export function applyPatch(raw: string, path: (string | number)[], value: unknown): string {
   const text = raw.trim() === "" ? "{}" : raw;
-  if (value === undefined) return removeProperty(text, path);
   const opts = detectIndent(text);
   const edits = modify(text, path as JSONPath, value, { formattingOptions: opts });
   return jsoncApplyEdits(text, edits);

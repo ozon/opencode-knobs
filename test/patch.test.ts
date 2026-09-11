@@ -45,6 +45,21 @@ describe("applyPatch", () => {
     expect(out).toContain("// top comment");
   });
 
+  test("removes key from single-line object without corrupting braces", () => {
+    const out = applyPatch('{"a": 1}', ["a"], undefined);
+    expect(JSON.parse(out)).toEqual({});
+  });
+
+  test("removes first key from single-line object and fixes commas", () => {
+    const out = applyPatch('{"a": 1, "b": 2}', ["a"], undefined);
+    expect(JSON.parse(out)).toEqual({ b: 2 });
+  });
+
+  test("removes array element via index path", () => {
+    const out = applyPatch('{"items": ["x", "y"]}', ["items", 1], undefined);
+    expect(JSON.parse(out)).toEqual({ items: ["x"] });
+  });
+
   test("handles nested object addition", () => {
     const src = '{\n  "a": 1\n}';
     const out = applyPatch(src, ["b"], 2);

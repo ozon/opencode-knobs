@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { serveStatic } from "hono/bun";
@@ -7,6 +8,7 @@ import {
   createSession,
   destroySession,
   hasSession,
+  clearFailures,
   recordFailure,
   verifyCode,
 } from "./auth";
@@ -17,7 +19,7 @@ import type { DocId } from "../shared/types";
 const SESSION_COOKIE = "knobs_session";
 const DOCS: DocId[] = ["config", "tui"];
 const schemasDir = new URL("../../schemas/", import.meta.url);
-const distDir = new URL("../../dist/", import.meta.url).pathname;
+const distDir = fileURLToPath(new URL("../../dist/", import.meta.url));
 
 export interface AppOptions {
   host: string;
@@ -64,7 +66,7 @@ export function createApp(opts: AppOptions) {
   });
 
   app.post("/api/login", async (c) => {
-    const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+    const ip = c.req.header("x-knobs-ip") ?? "local";
     const limit = checkRateLimit(ip);
     if (!limit.allowed) {
       return c.json({ error: "too many attempts", retryAfterMs: limit.retryAfterMs }, 429);
@@ -74,6 +76,7 @@ export function createApp(opts: AppOptions) {
       recordFailure(ip);
       return c.json({ error: "invalid code" }, 401);
     }
+    clearFailures(ip);
     const token = createSession();
     setCookie(c, SESSION_COOKIE, token, {
       httpOnly: true,
@@ -131,6 +134,8 @@ export function createApp(opts: AppOptions) {
   });
 
   app.get("/api/meta/providers", (c) => c.json(getModelsSnapshot()));
+
+  app.all("/api/*", (c) => c.json({ error: "not found" }, 404));
 
   app.use("/*", serveStatic({ root: distDir }));
   app.use("/*", serveStatic({ path: `${distDir}index.html` }));
