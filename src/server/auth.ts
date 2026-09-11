@@ -9,7 +9,7 @@ const SWEEP_INTERVAL_MS = 60_000;
 
 let expectedCode = "";
 const sessions = new Map<string, number>();
-const failures = new Map<string, { count: number; lockedUntil: number }>();
+const failures = new Map<string, { count: number; lockedUntil: number; lastFailure: number }>();
 let lastSweep = Date.now();
 
 function sweepFailures() {
@@ -18,6 +18,7 @@ function sweepFailures() {
   lastSweep = now;
   for (const [ip, entry] of failures) {
     if (entry.lockedUntil !== 0 && entry.lockedUntil < now) failures.delete(ip);
+    else if (entry.lockedUntil === 0 && now - entry.lastFailure > LOCKOUT_MS) failures.delete(ip);
   }
   if (failures.size > MAX_FAILURE_ENTRIES) {
     const entries = [...failures.entries()].sort((a, b) => a[1].lockedUntil - b[1].lockedUntil);
@@ -78,8 +79,9 @@ export function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: n
 }
 
 export function recordFailure(ip: string): void {
-  const entry = failures.get(ip) ?? { count: 0, lockedUntil: 0 };
+  const entry = failures.get(ip) ?? { count: 0, lockedUntil: 0, lastFailure: 0 };
   entry.count += 1;
+  entry.lastFailure = Date.now();
   if (entry.count >= MAX_FAILURES) {
     entry.lockedUntil = Date.now() + LOCKOUT_MS;
     entry.count = 0;
@@ -89,4 +91,8 @@ export function recordFailure(ip: string): void {
 
 export function resetRateLimits(): void {
   failures.clear();
+}
+
+export function clearFailures(ip: string): void {
+  failures.delete(ip);
 }

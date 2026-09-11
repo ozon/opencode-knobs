@@ -122,7 +122,7 @@
   {:else if resolved?.type === "string"}
     {#if isSecret(fieldPath)}
       <Field label={name} help={displayHelp} {error}>
-        <MaskedSecret {value} onchange={(v) => patchField(fieldPath, v)} />
+        <MaskedSecret hasValue={value != null} onchange={(v) => patchField(fieldPath, v)} onclear={() => patchField(fieldPath, undefined)} />
       </Field>
     {:else if suggestions?.[name]?.length}
       <Field label={name} help={displayHelp} {error}>

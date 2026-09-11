@@ -201,7 +201,7 @@
           <Field label="options">
             <div class="opts">
               <Field label="apiKey">
-                <MaskedSecret value={opts.apiKey} onchange={(v) => setProviderOpt(provId, "apiKey", v)} />
+                <MaskedSecret hasValue={opts.apiKey != null} onchange={(v) => setProviderOpt(provId, "apiKey", v)} onclear={() => setProviderOpt(provId, "apiKey", undefined)} />
               </Field>
               <Field label="baseURL">
                 <input type="text" value={opts.baseURL ?? ""}

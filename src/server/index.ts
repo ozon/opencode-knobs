@@ -7,7 +7,11 @@ export function parseFlags(argv: string[]): { host: string; port: number; idleTi
   const flags = { host: "127.0.0.1", port: 4789, idleTimeout: 30 };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    const next = () => argv[++i];
+    const next = () => {
+      const v = argv[++i];
+      if (v === undefined || v.startsWith("--")) throw new Error(`missing value for ${arg}`);
+      return v;
+    };
     if (arg === "--host") flags.host = next();
     else if (arg.startsWith("--host=")) flags.host = arg.slice(7);
     else if (arg === "--port") flags.port = Number(next());
@@ -20,6 +24,9 @@ export function parseFlags(argv: string[]): { host: string; port: number; idleTi
   }
   if (!Number.isFinite(flags.idleTimeout) || flags.idleTimeout < 0) {
     throw new Error(`invalid --idle-timeout: ${flags.idleTimeout}`);
+  }
+  if (typeof flags.host !== "string" || flags.host.trim() === "") {
+    throw new Error(`invalid --host: ${flags.host}`);
   }
   return flags;
 }
@@ -58,7 +65,17 @@ if (import.meta.main) {
   armIdleTimer();
   startModelsFetch();
 
-  const server = Bun.serve({ hostname: host, port, fetch: app.fetch });
+  const server = Bun.serve({
+    hostname: host,
+    port,
+    fetch: (req, srv) => {
+      const headers = new Headers(req.headers);
+      headers.delete("x-knobs-ip");
+      const ip = srv.requestIP(req)?.address;
+      if (ip) headers.set("x-knobs-ip", ip);
+      return app.fetch(new Request(req, { headers }));
+    },
+  });
   appOpts.port = server.port ?? port;
 
   const url = `http://${host === "0.0.0.0" ? "127.0.0.1" : host}:${server.port}`;
