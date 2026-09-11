@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-09-05T10:46:28.985Z",
+  "fetchedAt": "2026-09-11T07:44:49.371Z",
   "files": {
     "config.json": {
       "url": "https://opencode.ai/config.json",
@@ -11,7 +11,7 @@
     },
     "model-schema.json": {
       "url": "https://models.dev/model-schema.json",
-      "bytes": 321638
+      "bytes": 327063
     }
   }
 }
