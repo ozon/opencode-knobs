@@ -40,9 +40,12 @@ export function clientValidate(doc: DocId, json: unknown): DocError[] {
   const validator = doc === "config" ? configValidator : tuiValidator;
   if (!validator) return [];
   if (validator(json)) return [];
-  return (validator.errors ?? []).map((e) => ({
-    path: e.instancePath ?? "",
-    message: `${e.instancePath || "/"} ${e.message ?? "invalid"}`,
-    source: "schema" as const,
-  }));
+  return (validator.errors ?? []).map((e) => {
+    const extra = (e.params as { additionalProperty?: string } | undefined)?.additionalProperty;
+    return {
+      path: e.instancePath ?? "",
+      message: `${e.instancePath || "/"} ${e.message ?? "invalid"}${extra ? ` (unexpected key: "${extra}")` : ""}`,
+      source: "schema" as const,
+    };
+  });
 }

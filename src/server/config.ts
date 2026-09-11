@@ -70,11 +70,14 @@ function getValidator(doc: DocId) {
 export function validateDoc(doc: DocId, json: unknown): DocError[] {
   const validate = getValidator(doc);
   if (validate(json)) return [];
-  return (validate.errors ?? []).map((e) => ({
-    path: e.instancePath,
-    message: `${e.instancePath || "/"} ${e.message ?? "invalid"}`,
-    source: "schema" as const,
-  }));
+  return (validate.errors ?? []).map((e) => {
+    const extra = (e.params as { additionalProperty?: string } | undefined)?.additionalProperty;
+    return {
+      path: e.instancePath,
+      message: `${e.instancePath || "/"} ${e.message ?? "invalid"}${extra ? ` (unexpected key: "${extra}")` : ""}`,
+      source: "schema" as const,
+    };
+  });
 }
 
 export function schemaManifest(): { fetchedAt: string } {
